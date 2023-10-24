@@ -26,6 +26,18 @@ local function show_osd_message(file)
     mp.osd_message("Now playing: " .. file, 3)  -- Adjust OSD display time as needed
 end
 
+local function filter_media(files)
+    --- Filter out files with unwanted extensions.
+    local valid_files = {}
+    for _, file in ipairs(files) do
+        local ext = file:match("^.+%.(.+)$")
+        if ext and filetype_lookup[ext:lower()] then
+            table.insert(valid_files, file)
+        end
+    end
+    return valid_files
+end
+
 local function movetofile(forward)
     if mp.get_property('filename'):match("^%a%a+:%/%/") then
         return
@@ -45,7 +57,8 @@ local function movetofile(forward)
     local memory = nil
     local lastfile = true
     local firstfile = nil
-    for _, file in ipairs(files) do
+
+    for _, file in ipairs(filter_media(files)) do
         if found == true then
             mp.commandv("loadfile", utils.join_path(dir, file), "replace")
             lastfile = false
