@@ -14,3 +14,8 @@ $ git clone 'https://github.com/Ajatt-Tools/next-episode.git' ~/.config/mpv/scri
 
 Or manually download the folder and save it to `~/.config/mpv/scripts/`.
 The location may differ depending on the operating system or if you use a custom fork of mpv.
+
+## Usage
+
+* <kbd>Alt</kbd>+<kbd>Left arrow</kbd> &mdash; previous episode.
+* <kbd>Alt</kbd>+<kbd>Right arrow</kbd> &mdash; next episode.
