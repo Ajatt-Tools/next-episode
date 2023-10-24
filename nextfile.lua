@@ -8,9 +8,6 @@ local settings = {
         'mkv', 'avi', 'mp4', 'ogv', 'webm', 'rmvb', 'flv', 'wmv', 'mpeg', 'mpg', 'm4v', '3gp'
     },
 
-    --linux(true)/windows(false)/auto(nil)
-    linux_over_windows = nil,
-
     --at end of directory jump to start and vice versa
     allow_looping = true,
 
@@ -25,61 +22,8 @@ for _, ext in ipairs(settings.filetypes) do
     filetype_lookup[ext] = true
 end
 
---check os
-if settings.linux_over_windows == nil then
-    local o = {}
-    if mp.get_property_native('options/vo-mmcss-profile', o) ~= o then
-        settings.linux_over_windows = false
-    else
-        settings.linux_over_windows = true
-    end
-end
-
 local function show_osd_message(file)
     mp.osd_message("Now playing: " .. file, 3)  -- Adjust OSD display time as needed
-end
-
-local function parse_files(res, delimiter)
-    if not res.error and res.status == 0 then
-        local valid_files = {}
-        for line in res.stdout:gmatch("[^" .. delimiter .. "]+") do
-            local ext = line:match("^.+%.(.+)$")
-            if ext and filetype_lookup[ext:lower()] then
-                table.insert(valid_files, line)
-            end
-        end
-        return valid_files, nil
-    else
-        return nil, res.error
-    end
-end
-
-local function get_files_windows(dir)
-    local args = {
-        'powershell', '-NoProfile', '-Command', [[& {
-          Trap {
-              Write-Error -ErrorRecord $_
-              Exit 1
-          }
-          $path = "]] .. dir .. [["
-          $escapedPath = [WildcardPattern]::Escape($path)
-          cd $escapedPath
-
-          $list = (Get-ChildItem -File | Sort-Object { [regex]::Replace($_.Name, '\d+', { $args[0].Value.PadLeft(20) }) }).Name
-          $string = ($list -join "/")
-          $u8list = [System.Text.Encoding]::UTF8.GetBytes($string)
-          [Console]::OpenStandardOutput().Write($u8list, 0, $u8list.Length)
-      }]]
-    }
-    local process = utils.subprocess({ args = args, cancellable = false })
-    return parse_files(process, '%/')
-end
-
-local function get_files_linux(dir)
-    local flags = ('-1p' .. (settings.version_flag and 'v' or ''))
-    local args = { 'ls', flags, dir }
-    local process = utils.subprocess({ args = args, cancellable = false })
-    return parse_files(process, '\n')
 end
 
 local function movetofile(forward)
@@ -95,18 +39,7 @@ local function movetofile(forward)
     local path = utils.join_path(pwd, relpath)
     local filename = mp.get_property("filename")
     local dir = utils.split_path(path)
-
-    local files, error
-    if settings.linux_over_windows then
-        files, error = get_files_linux(dir)
-    else
-        files, error = get_files_windows(dir)
-    end
-
-    if not files then
-        msg.error("Subprocess failed: " .. (error or ''))
-        return
-    end
+    local files = utils.readdir(dir, "files")
 
     local found = false
     local memory = nil
@@ -158,5 +91,6 @@ local function prevhandler()
     movetofile(false)
 end
 
-mp.add_key_binding('Alt+RIGHT', 'nextfile', nexthandler)
-mp.add_key_binding('Alt+LEFT', 'previousfile', prevhandler)
+mp.add_key_binding('Alt+LEFT', 'ajt__previous_file', prevhandler)
+mp.add_key_binding('Alt+RIGHT', 'ajt__next_file', nexthandler)
+
