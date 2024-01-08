@@ -52,6 +52,7 @@ local function movetofile(forward)
     local filename = mp.get_property("filename")
     local dir = utils.split_path(path)
     local files = utils.readdir(dir, "files")
+    table.sort(files)
 
     local found = false
     local memory = nil
